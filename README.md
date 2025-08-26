@@ -73,7 +73,7 @@ APP_PASS=secret app pass
 ## Notes
 
 - Email verification and password reset links are sent via email and open EJS pages for user interaction.
-- All protected endpoints require a valid JWT token in the `Authorization` header as `Bearer <token>`.
+- All protected endpoints require a valid JWT token in the `Authorization` header as  'x-auth-token' : token.
 - Roles: `Admin`, `User` (with `isAdmin` boolean in user model).
 
 ---
