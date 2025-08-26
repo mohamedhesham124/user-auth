@@ -59,11 +59,13 @@ For errors:
 
 ```
 PORT=3000
-MONGO_URI=mongodb://localhost:27017/your-db-name
-JWT_SECRET=your_jwt_secret
 URL=http://localhost:3000
-EMAIL_USER=your@email.com
-EMAIL_PASS=your_email_password
+NODE_ENV=development
+DB_STRING=mongodb://localhost:27017/user-auth
+DB_STRING_PROD=mongodb://localhost:27017/user-auth
+JWT_SECRET=your_jwt_secret
+EMAIL_USER=yourgmail@gmail.com
+APP_PASS=secret app pass
 ```
 
 ---
