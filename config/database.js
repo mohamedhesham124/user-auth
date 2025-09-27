@@ -1,21 +1,18 @@
-const mongoose = require('mongoose');
-
+const { Sequelize } = require('sequelize');
 require('dotenv').config();
 
 const devConnection = process.env.DB_STRING;
 const prodConnection = process.env.DB_STRING_PROD;
 
-// Connect to the correct environment database
-if (process.env.NODE_ENV === 'production') {
-    mongoose.connect(prodConnection );
+const connectionString = process.env.NODE_ENV === 'production' ? prodConnection : devConnection;
 
-    mongoose.connection.on('connected', () => {
-        console.log('Database connected');
-    });
-} else {
-    mongoose.connect(devConnection );
+const sequelize = new Sequelize(connectionString, {
+  dialect: 'postgres',
+  logging: false
+});
 
-    mongoose.connection.on('connected', () => {
-        console.log('Database connected');
-    });
-}
+sequelize.authenticate()
+  .then(() => console.log('Database connected'))
+  .catch(err => console.error('Database connection error:', err));
+
+module.exports = sequelize;

@@ -1,46 +1,40 @@
-const mongoose = require('mongoose');
-const bcrypt = require("../utils/bcrypt");
-const { Schema } = mongoose;
-const { v4: uuidv4 } = require('uuid');
+const { DataTypes } = require('sequelize');
+const sequelize = require('../config/database');
 
-
-// User Schema
-const userSchema = new Schema({
+const User = sequelize.define('User', {
   id: {
-    type: String,
-    default: uuidv4, 
-    unique: true
+    type: DataTypes.UUID,
+    defaultValue: DataTypes.UUIDV4,
+    primaryKey: true
   },
   name: {
-    type: String,
-    required: true
+    type: DataTypes.STRING,
+    allowNull: false
   },
   email: {
-    type: String,
-    required: true,
+    type: DataTypes.STRING,
+    allowNull: false,
     unique: true
   },
-  isVerified : {
-    type : Boolean,
-    default : false
+  isVerified: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
   },
   password: {
-    type: String,
-    required: true
+    type: DataTypes.STRING,
+    allowNull: false
+  },
+  isAdmin: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
   },
   role: {
-    type: String,
-    enum: ['User', 'Admin'],
-    default: 'User' 
+    type: DataTypes.ENUM('Admin', 'User'),
+    defaultValue: 'User',
+    allowNull: false
   }
-}, { timestamps: true });
-
-userSchema.methods.comparePassword = async function ( password ) {
-     const isMatch = bcrypt.comparePassword(password , this.password);
-     return isMatch;
-}
- 
- 
-const User = mongoose.model('User', userSchema);
+}, {
+  timestamps: true
+});
 
 module.exports = User;

@@ -12,7 +12,7 @@ const usersRoute = require('./routes/user.route');
 
 
 const app = express();
-require('./config/database');
+const sequelize = require('./config/database');
 const port =  process.env.PORT ||  3000;
 
 
@@ -44,6 +44,9 @@ app.use('/api/v1/user', usersRoute);
 // error handling middleware
 app.use(errorHandler);
 
+sequelize.sync({ alter: true }) // or { force: true } for development only
+  .then(() => console.log('Database & tables synced'))
+  .catch(err => console.error('Sync error:', err));
   
 // Start the server
 app.listen(port, () => {

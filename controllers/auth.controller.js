@@ -58,7 +58,7 @@ class authController {
         const user = await User.findByEmail(email);
         if (!user) return response.fail(res, "Invalid credentials");
 
-        const isMatch = await user.comparePassword(password);
+        const isMatch = await User.comparePassword(user, password);
         if (!isMatch) return response.fail(res, "Invalid credentials");
 
         const token = signToken(user.id, user.role);
@@ -75,7 +75,7 @@ class authController {
         if (!user) return response.fail(res, "User not found");
 
         const resetToken = signToken(user.id);
-        const resetLink = `${process.env.URL}/api/v1/user/-password?token=${resetToken}`;
+        const resetLink = `${process.env.URL}/api/v1/user/reset-password?token=${resetToken}`;
 
         const mailer = new mailService();
         await mailer.sendPasswordResetEmail(email, resetLink);
@@ -125,6 +125,8 @@ class authController {
     // Role-based access control
     static restrictTo = (...roles) => {
         return asyncFun(async (req, res, next) => {
+            console.log(roles);
+            console.log(req.user.id);
             if (!roles.includes(req.user.role) && !(roles.includes("User") && req.user.id === req.params.id)) {
                 return response.fail(res, "You do not have permission to perform this action", [], 403);
             }
