@@ -1,4 +1,4 @@
-// validators/authValidator.js
+// src/api/auth/auth.validation.js
 const Joi = require("joi");
 
 const signupSchema = Joi.object({

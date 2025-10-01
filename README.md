@@ -33,16 +33,16 @@ For errors:
 
 ## API Endpoints
 
-### Auth & User
+### Auth
 
 | Method | Endpoint                       | Description                        | Auth Required | Roles         |
 |--------|------------------------------- |------------------------------------|-------------- |-------------- |
-| POST   | `/api/v1/user/signup`          | Register a new user                | No           | -             |
-| POST   | `/api/v1/user/signin`          | Login and get JWT token            | No           | -             |
-| GET    | `/api/v1/user/verify-email`    | Verify email via token             | No           | -             |
-| POST   | `/api/v1/user/forget-password` | Send password reset email          | No           | -             |
-| GET    | `/api/v1/user/reset-password`  | Show reset password form (EJS)     | No           | -             |
-| POST   | `/api/v1/user/change-password` | Change password via reset token    | No           | -             |
+| POST   | `/api/v1/auth/signup`          | Register a new user                | No           | -             |
+| POST   | `/api/v1/auth/signin`          | Login and get JWT token            | No           | -             |
+| GET    | `/api/v1/auth/verify-email`    | Verify email via token             | No           | -             |
+| POST   | `/api/v1/auth/forget-password` | Send password reset email          | No           | -             |
+| GET    | `/api/v1/auth/reset-password`  | Show reset password form (EJS)     | No           | -             |
+| POST   | `/api/v1/auth/change-password` | Change password via reset token    | No           | -             |
 
 ### User Management
 
@@ -62,7 +62,7 @@ PORT=3000
 URL=http://localhost:3000
 NODE_ENV=development
 DB_STRING=mongodb://localhost:27017/user-auth
-DB_STRING_PROD=mongodb://localhost:27017/user-auth
+DB_STRING_PROD=postgres://admin:7788@localhost:5432/user_auth
 JWT_SECRET=your_jwt_secret
 EMAIL_USER=yourgmail@gmail.com
 APP_PASS=secret app pass
