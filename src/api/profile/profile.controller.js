@@ -1,8 +1,7 @@
 const asyncFun = require('../../middlewares/async.handler');
-const ProfileService = require('./profile.service');
+const profileService = require('./profile.service');
 const { success } = require('../../utils/ApiResponse');
 
-const profileService = new ProfileService();
 
 class ProfileController {
   /**
