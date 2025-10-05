@@ -85,6 +85,28 @@ class ProfileService {
 
     return { message: "Password changed successfully" };
   }
+
+  async changeProfilePicture(userId, filename) {
+
+    // Construct the file URL (adjust based on your server setup)
+    const baseUrl = process.env.URL
+    const profilePictureUrl = `${baseUrl}/uploads/profile-pictures/${filename}`;
+
+    const result = await this.profileRepository.updateByProifleId(userId, {
+      profilePicture: profilePictureUrl
+    });
+        
+    if (!result.count) {
+      // Delete the uploaded file if profile update fails
+      const filePath = path.join(__dirname, `../../uploads/profile-pictures/${filename}`);
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+      throw { statusCode: 404, message: "Profile not found" };
+    }
+
+    return await this.profileRepository.findByUserId(userId);
+  }
 }
 
 module.exports = new ProfileService();

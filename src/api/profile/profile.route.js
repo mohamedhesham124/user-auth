@@ -5,6 +5,7 @@ const { roleCheck } = require('../../middlewares/role.middleware'); // NEW
 const { validateAuth } = require('../../middlewares/auth.middleware');
 const validate = require('../../middlewares/validate');
 const { createProfileSchema, updateProfileSchema, changePasswordSchema, changeProfilePictureSchema } = require("./profile.validation");
+const { uploadProfilePicture, handleUploadError } = require('../../middlewares/upload.middleware');
 
 // All routes require authentication
 router.use(validateAuth);
@@ -20,6 +21,8 @@ router.get("/:id", roleCheck, profileController.getProfileById);
 router.post("/:id", roleCheck, validate(updateProfileSchema), profileController.updateProfileById);
 router.delete("/:id", roleCheck, profileController.deleteProfileById);
 router.post("/:id/password", roleCheck, validate(changePasswordSchema), profileController.changePassword);
-router.post("/:id/profile-picture", roleCheck, validate(changeProfilePictureSchema), profileController.changeProfilePicture);
+
+// uploads any user's profile picture
+router.post("/:id/profile-picture", roleCheck, uploadProfilePicture, handleUploadError, profileController.uploadProfilePicture);
 
 module.exports = router;

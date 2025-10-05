@@ -1,6 +1,6 @@
 const asyncFun = require('../../middlewares/async.handler');
 const profileService = require('./profile.service');
-const { success } = require('../../utils/ApiResponse');
+const { success, fail } = require('../../utils/ApiResponse');
 
 
 class ProfileController {
@@ -56,12 +56,13 @@ class ProfileController {
   });
 
   /**
-   * Change profile picture
-   */
-  changeProfilePicture = asyncFun(async (req, res) => {
-    const { profilePicture } = req.body;
-    const profile = await profileService.changeProfilePicture(req.user.id, profilePicture);
-    return success(res, "Profile picture updated successfully", profile);
+  * Upload and change profile picture
+  */
+  uploadProfilePicture = asyncFun(async (req, res) => {
+    if (!req.file) return fail(res, "No file uploaded")
+
+    const profile = await profileService.changeProfilePicture(req.user.id, req.file.filename);
+      return success(res, "Profile picture updated successfully", profile);
   });
 }
 
