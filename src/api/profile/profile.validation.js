@@ -14,4 +14,18 @@ const updateProfileSchema = Joi.object({
   phone: Joi.string().pattern(/^\+?[\d\s\-\(\)]{10,}$/).optional()
 });
 
-module.exports = { createProfileSchema, updateProfileSchema };
+const changePasswordSchema = Joi.object({
+    confirmPassword: Joi.string().required(),
+    newPassword: Joi.string().min(6).required()
+});
+
+const changeProfilePictureSchema = Joi.object({
+    profilePicture: Joi.string().uri().required()
+});
+
+module.exports = { 
+    createProfileSchema, 
+    updateProfileSchema, 
+    changePasswordSchema,
+    changeProfilePictureSchema
+};

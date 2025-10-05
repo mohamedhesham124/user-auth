@@ -16,7 +16,8 @@ class ProfileRepository {
   }
 
   async findById(id) {
-    return await Profile.findByPk(id, {
+    const profile = await this.findByUserId(id);
+    return await Profile.findByPk(profile.id, {
       include: [{
         association: 'user',
         attributes: ['id', 'name', 'email', 'role']
@@ -24,26 +25,18 @@ class ProfileRepository {
     });
   }
 
-  async updateByUserId(userId, updateData) {
-    const [affectedCount] = await Profile.update(updateData, { 
-      where: { userId } 
-    });
-    return affectedCount > 0;
-  }
-
   async updateByProifleId(id, updateData) {
+    const profile = await this.findByUserId(id);
+    //console.log(profile.id)
     const [affectedCount] = await Profile.update(updateData, { 
-      where: { id } 
+      where: { id: profile.id } 
     });
-    return affectedCount > 0;
-  }
-
-  async deleteByUserId(userId) {
-    return await Profile.destroy({ where: { userId } });
+    return {count: (affectedCount > 0), profileId: profile.id};
   }
 
   async deleteByProfileId(id) {
-    return await Profile.destroy({ where: { id } });
+    const profile = await this.findByUserId(id);
+    return await Profile.destroy({ where: { id: profile.id } });
   }
 
   async userHasProfile(userId) {

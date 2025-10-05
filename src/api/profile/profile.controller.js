@@ -21,7 +21,7 @@ class ProfileController {
   });
 
   /**
-   * Get profile by ID (Admin only)
+   * Get profile by ID
    */
   getProfileById = asyncFun(async (req, res) => {
     const profile = await profileService.getProfileById(req.params.id);
@@ -29,35 +29,39 @@ class ProfileController {
   });
 
   /**
-   * Update current user's profile
-   */
-  updateMyProfile = asyncFun(async (req, res) => {
-    const profile = await profileService.updateProfile(req.user.id, req.body);
-    return success(res, "Profile updated successfully", profile);
-  });
-
-  /**
-   * Update profile by ID (Admin only)
+   * Update profile by ID
    */
   updateProfileById = asyncFun(async (req, res) => {
+    //console.log(req.params.id)
     const profile = await profileService.updateProfileById(req.params.id, req.body);
     return success(res, "Profile updated successfully", profile);
   });
 
   /**
-   * Delete current user's profile
-   */
-  deleteMyProfile = asyncFun(async (req, res) => {
-    const result = await profileService.deleteProfile(req.user.id);
-    return success(res, result.message, null, 204);
-  });
-
-  /**
-   * Delete profile by ID (Admin only)
+   * Delete profile by ID
    */
   deleteProfileById = asyncFun(async (req, res) => {
     const result = await profileService.deleteProfileById(req.params.id);
     return success(res, result.message, null, 204);
+  });
+
+  /**
+   * Change user password
+   */
+  changePassword = asyncFun(async (req, res) => {
+    const passwords = req.body;
+    //console.log(passwords)
+    const result = await profileService.changePassword(req.user.id, passwords, req.user.email);
+    return success(res, result.message);
+  });
+
+  /**
+   * Change profile picture
+   */
+  changeProfilePicture = asyncFun(async (req, res) => {
+    const { profilePicture } = req.body;
+    const profile = await profileService.changeProfilePicture(req.user.id, profilePicture);
+    return success(res, "Profile picture updated successfully", profile);
   });
 }
 

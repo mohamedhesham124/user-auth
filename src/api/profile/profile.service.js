@@ -1,5 +1,6 @@
 const ProfileRepository = require('./profile.repository');
 const UserRepository = require('../user/user.repository');
+const bcryptUtil = require('../../utils/bcrypt');
 
 class ProfileService {
   constructor() {
@@ -37,53 +38,56 @@ class ProfileService {
     return profile;
   }
 
-  async getProfileById(profileId) {
-    const profile = await this.profileRepository.findById(profileId);
+  async getProfileById(userId) {
+    const profile = await this.profileRepository.findById(userId);
     if (!profile) {
       throw { statusCode: 404, message: "Profile not found" };
     }
     return profile;
   }
 
-  async updateProfile(userId, updateData) {
-    // Check if profile exists
-    const existingProfile = await this.profileRepository.findByUserId(userId);
-    if (!existingProfile) {
-      throw { statusCode: 404, message: "Profile not found" };
+  async updateProfileById(userId, updateData) {
+    const result = await this.profileRepository.updateByProifleId(userId, updateData);
+    //console.log(updated)
+    if (!result.count) {
+      throw { statusCode: 404, message: "Error in updating" };
     }
 
-    // Update profile
-    const updated = await this.profileRepository.updateByUserId(userId, updateData);
+    return await this.profileRepository.findById(result.profileId);
+  }
+
+  async deleteProfileById(userId) {
+    const deleted = await this.profileRepository.deleteByProfileId(userId);
+    if (!deleted) {
+      throw { statusCode: 404, message: "Profile not found" };
+    }
+    return { message: "Profile deleted successfully" };
+  }
+
+  async changePassword(userId, passwords, email) {
+    // Compare two passwords
+
+    if (passwords.newPassword!==passwords.confirmPassword) {
+        throw { statusCode: 404, message: "password and confirm aren't same" };
+    }
+
+    // Hash new password and update
+    const hashedNewPassword = await bcryptUtil.hashPassword(passwords.newPassword);
+    await this.userRepository.updatePassword(userId, hashedNewPassword);
+
+    return { message: "Password changed successfully" };
+  }
+
+  async changeProfilePicture(userId, profilePictureUrl) {
+    const updated = await this.profileRepository.updateByUserId(userId, {
+        profilePicture: profilePictureUrl
+    });
+    
     if (!updated) {
-      throw { statusCode: 500, message: "Failed to update profile" };
+        throw { statusCode: 404, message: "Profile not found" };
     }
 
     return await this.profileRepository.findByUserId(userId);
-  }
-
-  async updateProfileById(profileId, updateData) {
-    const updated = await this.profileRepository.updateByProifleId(profileId, updateData);
-    if (!updated) {
-      throw { statusCode: 404, message: "Profile not found" };
-    }
-
-    return await this.profileRepository.findById(profileId);
-  }
-
-  async deleteProfile(userId) {
-    const deleted = await this.profileRepository.deleteByUserId(userId);
-    if (!deleted) {
-      throw { statusCode: 404, message: "Profile not found" };
-    }
-    return { message: "Profile deleted successfully" };
-  }
-
-  async deleteProfileById(profileId) {
-    const deleted = await this.profileRepository.deleteByProfileId(profileId);
-    if (!deleted) {
-      throw { statusCode: 404, message: "Profile not found" };
-    }
-    return { message: "Profile deleted successfully" };
   }
 }
 
