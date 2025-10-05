@@ -79,7 +79,7 @@ class ProfileService {
   }
 
   async changeProfilePicture(userId, profilePictureUrl) {
-    const updated = await this.profileRepository.updateByUserId(userId, {
+    const updated = await this.profileRepository.updateByProifleId(userId, {
         profilePicture: profilePictureUrl
     });
     
