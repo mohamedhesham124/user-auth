@@ -65,29 +65,25 @@ class ProfileService {
   }
 
   async changePassword(userId, passwords, email) {
-    // Compare two passwords
+    const { currentPassword, newPassword } = passwords;
+        
+    // Get user with password for verification
+    const user = await this.userRepository.findByEmailWithPassword(email);
+    if (!user) {
+        throw { statusCode: 404, message: "User not found" };
+    }
 
-    if (passwords.newPassword!==passwords.confirmPassword) {
-        throw { statusCode: 404, message: "password and confirm aren't same" };
+    // Verify current password
+    const isCurrentPasswordValid = await bcryptUtil.comparePassword(currentPassword, user.password);
+    if (!isCurrentPasswordValid) {
+        throw { statusCode: 401, message: "Current password is incorrect" };
     }
 
     // Hash new password and update
-    const hashedNewPassword = await bcryptUtil.hashPassword(passwords.newPassword);
+    const hashedNewPassword = await bcryptUtil.hashPassword(newPassword);
     await this.userRepository.updatePassword(userId, hashedNewPassword);
 
     return { message: "Password changed successfully" };
-  }
-
-  async changeProfilePicture(userId, profilePictureUrl) {
-    const updated = await this.profileRepository.updateByProifleId(userId, {
-        profilePicture: profilePictureUrl
-    });
-    
-    if (!updated) {
-        throw { statusCode: 404, message: "Profile not found" };
-    }
-
-    return await this.profileRepository.findByUserId(userId);
   }
 }
 

@@ -15,8 +15,9 @@ const updateProfileSchema = Joi.object({
 });
 
 const changePasswordSchema = Joi.object({
-    confirmPassword: Joi.string().required(),
-    newPassword: Joi.string().min(6).required()
+  currentPassword: Joi.string().required(),
+  newPassword: Joi.string().min(6).required(),
+  confirmPassword: Joi.string().valid(Joi.ref('newPassword')).required()
 });
 
 const changeProfilePictureSchema = Joi.object({
