@@ -20,7 +20,7 @@ router.get("/me", profileController.getMyProfile);
 router.get("/:id", roleCheck, profileController.getProfileById);
 router.post("/:id", roleCheck, validate(updateProfileSchema), profileController.updateProfileById);
 router.delete("/:id", roleCheck, profileController.deleteProfileById);
-router.post("/:id/password", roleCheck, validate(changePasswordSchema), profileController.changePassword);
+router.put("/:id/password", roleCheck, validate(changePasswordSchema), profileController.changePassword);
 
 // uploads any user's profile picture
 router.post("/:id/profile-picture", roleCheck, uploadProfilePicture, handleUploadError, profileController.uploadProfilePicture);

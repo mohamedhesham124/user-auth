@@ -4,12 +4,7 @@ const teamController = require("./team.controller");
 const { validateAuth } = require('../../middlewares/auth.middleware');
 const { checkTeamPermission } = require('../../middlewares/teamPermission.middleware');
 const validate = require('../../middlewares/validate');
-const { 
-    createTeamSchema, 
-    updateTeamSchema, 
-    addMemberSchema, 
-    updateMemberRoleSchema 
-} = require("./team.validation");
+const { createTeamSchema, updateTeamSchema, addMemberSchema, updateMemberRoleSchema } = require("./team.validation");
 
 // All routes require authentication
 router.use(validateAuth);
