@@ -61,11 +61,11 @@ For errors:
 PORT=3000
 URL=http://localhost:3000
 NODE_ENV=development
-DB_STRING=mongodb://localhost:27017/user-auth
-DB_STRING_PROD=postgres://admin:7788@localhost:5432/user_auth
+DB_STRING=postgres://postgres:1234@localhost:5432/user_auth
+DB_STRING_PROD=postgres://postgres:1234@localhost:5432/user_auth
 JWT_SECRET=your_jwt_secret
-EMAIL_USER=yourgmail@gmail.com
-APP_PASS=secret app pass
+EMAIL_USER=email@gmail.com
+APP_PASS=pass
 ```
 
 ---
