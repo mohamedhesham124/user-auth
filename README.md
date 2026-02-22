@@ -1,380 +1,1019 @@
-# user-auth
+# User Auth Project - Complete Documentation
 
-user-auth — authentication & authorization microservice
+## 📋 Table of Contents
 
-This project is a minimal, production-minded Node.js service that provides user authentication and role/permission based access control using Express and Sequelize (Postgres). It implements:
-- User signup / signin, email verification, password reset
-- JWT authentication and middleware to protect routes
-- Role and Permission models with many-to-many associations
-- Files and code structure following controller → service → repository → model
-
----
-
-## Table of contents
-
-1. Quick start
-2. Configuration (.env)
-3. Available Scripts
-4. Architecture & key modules
-5. Database & models
-6. Seeding & verification scripts
-7. API Reference (short) — Auth, Users, Roles, Permissions, Teams, Profiles
-8. Typical Postman examples
-9. Troubleshooting
-10. Recommendations (migrations / tests)
-11. Contributing
-12. License
+1. [Project Overview](#project-overview)
+2. [Installation & Setup](#installation--setup)
+3. [Database Schema](#database-schema)
+4. [API Endpoints](#api-endpoints)
+5. [Notification System](#notification-system)
+6. [Features & Scenarios](#features--scenarios)
+7. [Project Structure](#project-structure)
+8. [Usage Examples](#usage-examples)
 
 ---
 
-## Quick start
+## 🎯 Project Overview
 
-Prerequisites
-- Node.js >= 18
-- Postgres instance accessible using a connection string in `.env`
+This is a **User Authentication & Team Management System** with automatic notifications. The system allows users to:
 
-1. Clone the repository and install dependencies:
+- Register and verify email
+- Follow other users
+- Create and manage teams
+- Manage files and analyze data
+- Receive automatic notifications for important events
 
+**Key Features:**
+- ✅ JWT-based authentication
+- ✅ Email verification
+- ✅ Follow/Unfollow system
+- ✅ Team management with roles
+- ✅ File upload & data analysis
+- ✅ Automatic event-based notifications
+- ✅ Multi-channel notification delivery (email, push, in-app)
+
+---
+
+## 🚀 Installation & Setup
+
+### Prerequisites
+- Node.js v14+
+- PostgreSQL database
+- npm or yarn
+
+### Steps
+
+1. **Clone and Install**
 ```bash
-git clone <repo-url>
+git clone <repo>
 cd user-auth
 npm install
 ```
 
-2. Create and fill a `.env` file (see next section – DB_STRING and JWT_SECRET are required).
-
-3. Start the server (development):
-
-```bash
-npm start
-```
-
-While the app uses `sequelize.sync({ alter: true })` to create/update tables on boot (useful for development), it's recommended to use migrations for production (see Recommendations section).
-
----
-
-## Pre-test configuration (.env and DB)
-
-Create a `.env` file in the project root with at minimum these values (example):
-
+2. **Create `.env` file**
 ```env
-PORT=3000
-URL=http://localhost:3000
+DATABASE_URL=postgresql://user:password@localhost:5432/user_auth
+JWT_SECRET=your_secret_key_here
+URL=http://localhost:5000
 NODE_ENV=development
-DB_STRING=postgres://postgres:password@localhost:5432/user_auth
-DB_STRING_PROD=postgres://postgres:password@yourprod:5432/user_auth
-JWT_SECRET=replace-with-secure-string
-EMAIL_USER=your@email.com
-APP_PASS=email-app-password
+EMAIL_USER=your_email@gmail.com
+EMAIL_PASSWORD=your_password
 ```
 
-Make sure your Postgres server is running and reachable using the connection string. The app uses `sequelize` to manage connections.
-
----
-
-## Pre-test & helper scripts
-
-
-Common tasks you will run when preparing to test the application:
-
-- npm start — start the server (runs sequelize.sync by default)
-- npm run seed — create sample roles & permissions (Admin & User and example permissions)
-- npm run check:associations — quick smoke-check for Role <-> Permission linking
-
-Run scripts from the project root. Example:
-
+3. **Initialize Database**
 ```bash
-npm run seed
-npm run check:associations
+npm run migrate  # or sync models with database
 ```
-user-auth — Authentication & Authorization microservice
 
-- User signup / sign-in, email verification, password reset
-- JWT authentication and middleware to protect routes
-- Role and Permission models with many-to-many associations
-- Files and code structure following controller → service → repository → model
-This project is a production-minded Node.js microservice that provides user authentication, authorization and role/permission management using Express and Sequelize (Postgres). Key capabilities:
-
-- User signup / sign-in, email verification, password reset
-- JWT authentication with middleware and role-based route restrictions
-- Role and Permission models, connected via a many-to-many join table (RolePermission)
-- Organized layers: routes → controllers → services → repositories → models
-
-1. Clone the repository and install dependencies (local development):
-
-2. Create and fill a `.env` file (example below). At minimum set `DB_STRING` and `JWT_SECRET`.
-
-3. Start the server (development):
-
+4. **Start Server**
 ```bash
 npm start
 ```
-- Controllers: `src/api/*/*.controller.js`
-Create a `.env` file in the project root with the following minimum values (example):
-- Repositories: `src/api/*/*.repository.js`
-The server reads `.env` automatically. Ensure your Postgres database is running and reachable via the `DB_STRING` connection string.
 
-Common tasks you will run when preparing to test the application (local):
-
-Note: `npm run seed` expects the DB configured and available. If tables are missing, the seeder calls `sequelize.sync({ alter: true })` before creating data. This behavior is DEV-only — consider migrations for production.
-- `src/index.js` — startup, model loader and sequelize.sync
-Primary code layout
-
-## Minimal pre-test checklist
-
-1. Create `.env` and set `DB_STRING` and `JWT_SECRET` (see sample above).
-
-2. Start Postgres and ensure the DB is reachable.
-
-3. Start the server once: `npm start` (this runs `sequelize.sync({ alter: true })`) or run `npm run seed` to sync + seed initial roles/permissions.
-
-4. Use `npm run check:associations` to verify Role ↔ Permission associations are working.
-2. Start Postgres and ensure the DB is accessible.
-If `rolepermissions` or other tables are missing, start the server or run the seeder — both call `sequelize.sync({ alter: true })` in development mode.
-4. Use `npm run check:associations` to verify Role ↔ Permission associations work.
-- POST /auth/signup — register user. Body: { name, email, password }
-- POST /auth/signin — login. Body: { email, password } → returns token and sets `x-auth-token` header
-- GET /auth/verify-email?token=TOKEN — verify account (EJS render)
-- POST /auth/forget-password — request reset email. Body: { email }
-- GET /auth/reset-password?token=TOKEN — render reset form (EJS)
-- POST /auth/change-password?token=TOKEN — change via reset token. Body: { password }
-Auth endpoints (public)
-
-- POST /auth/signup — register a user
-  - Body: { name, email, password }
-  - Result: sends verification email and creates user (isVerified=false)
-
-- POST /auth/signin — login
-  - Body: { email, password }
-  - Result: returns { token, user } and sets `x-auth-token` header
-
-- GET /auth/verify-email?token=TOKEN — verify account (email link, EJS view)
-
-- POST /auth/forget-password — request a password reset email
-  - Body: { email }
-
-- GET /auth/reset-password?token=TOKEN — show reset page (EJS)
-
-- POST /auth/change-password?token=TOKEN — complete password reset
-  - Body: { password }
-Users endpoints (protected)
-
-- GET /user/ — list users (Admin)
-  - Auth: x-auth-token — Admin only
-  - Response: array of user objects
-
-- GET /user/:id — get user by id
-  - Auth: x-auth-token — Admin or the user (self) allowed
-
-- PUT /user/:id — update user
-  - Auth: x-auth-token — user updating own profile
-  - Body: fields to update (name, email, password, ...)
-
-- DELETE /user/:id — delete user
-  - Auth: x-auth-token — Admin or the user themselves
-Use `psql` or your DB GUI to inspect created tables (`users`, `roles`, `permissions`, `rolepermissions`, ...).
-Roles (Admin)
-- POST /role — create role. Body: { name }
-- GET /role — list roles (includes permissions)
-- GET /role/:role_id — get role (includes permissions)
-- PUT /role/:role_id — update role
-- DELETE /role/:role_id — delete role
-
-Role permissions
-- POST /role/:role_id/permissions — attach single permission. Body: { perm_id }
-- POST /role/:role_id/permissions/bulk — attach multiple. Body: { perm_ids: [1,2] }
-- DELETE /role/:role_id/permissions/:perm_id — remove permission
-Important models and relationships:
-- POST /profile — create profile (body validated)
-- GET /profile/me — get own profile (auth)
-- GET /profile/:id — get profile (role-check applies)
-- POST /profile/:id — update profile (role-check applies)
-- PUT /profile/:id/password — change password
-- POST /profile/:id/profile-picture — upload picture
-
-Profile endpoints
-- POST /profile — create profile (body validated)
-- GET /profile/me — get own profile (auth)
-- GET /profile/:id — get profile by id (role-check applies)
-- POST /profile/:id — update profile (role-check applies)
-- PUT /profile/:id/password — change password for user (role-check applies)
-- POST /profile/:id/profile-picture — upload picture (multipart)
-- User
-- POST /team — create team
-- GET /team — list teams
-- GET /team/:team_id — get single team (team_view check)
-- PUT /team/:team_id — update team (team_update check)
-- DELETE /team/:team_id — delete team
-
-Team endpoints
-- POST /team — create team
-- GET /team — list teams
-- GET /team/:team_id — get single team (team_view permission check)
-- PUT /team/:team_id — update team (team_update permission check)
-- DELETE /team/:team_id — delete team (team_delete permission check)
-- Role
-Sign in (get token)
-- Permission
-## Troubleshooting — quick (common problems)
-- RolePermission (join table)
-• DB connection failure — check `.env` variable `DB_STRING` and confirm Postgres instance is running.
-
-• Missing tables — `npm start` or `npm run seed` will create missing tables in dev. Consider migrations for production.
-- Role.belongsToMany(Permission, { through: RolePermission })
-• Eager-loading error (Permission is not associated to Role) — ensure the app startup loads `rolePermission` model and restart server.
-
-• Unauthorized / token expiry — pass `x-auth-token` header with a current token and ensure `isVerified=true`.
-
-## Next steps and optional improvements
-
-• For production: replace `sequelize.sync({ alter: true })` with Sequelize migrations and a CI-driven release process.
-
-• Add automated integration tests (e.g., Jest + supertest) and a CI pipeline.
-- Smoke-check: `npm run check:associations` will create temporary resources and verify Role-Permission linking (useful to confirm association are functional in your DB/environment).
-• Consider fine-grained RBAC where middleware checks `permissions` (not only role names).
+Server runs on `http://localhost:5000`
 
 ---
 
-## API endpoints (compact)
+## 🗄️ Database Schema
 
-Base path: `/api/v1`
+### Users Table
+```sql
+id (UUID, PK)
+name (VARCHAR)
+email (VARCHAR, UNIQUE)
+password (VARCHAR, hashed)
+isVerified (BOOLEAN, default: false)
+role (ENUM: 'Admin', 'User')
+created_at (TIMESTAMP)
+updated_at (TIMESTAMP)
+```
 
-Auth (public)
-- POST /auth/signup — register user. Body: { name, email, password }
-- POST /auth/signin — login. Body: { email, password } → returns token and sets `x-auth-token` header
-- GET /auth/verify-email?token=TOKEN — verify account (EJS render)
-- POST /auth/forget-password — request reset email. Body: { email }
-- GET /auth/reset-password?token=TOKEN — render reset form (EJS)
-- POST /auth/change-password?token=TOKEN — change via reset token. Body: { password }
+### Follows Table
+```sql
+id (UUID, PK)
+follower_id (UUID, FK → users.id)
+followee_id (UUID, FK → users.id)
+created_at (TIMESTAMP)
+updated_at (TIMESTAMP)
+UNIQUE(follower_id, followee_id)
+```
 
-Users (protected)
-- GET /user/ — list users (Admin)
-- GET /user/:id — get user by id (Admin or self)
-- PUT /user/:id — update user (self)
-- DELETE /user/:id — delete (Admin or self)
+### Teams Table
+```sql
+team_id (INTEGER, PK, auto-increment)
+name (VARCHAR)
+description (TEXT)
+created_at (TIMESTAMP)
+```
 
-Roles (admin)
-- POST /role — create role. Body: { name }
-- GET /role — list roles (includes permissions)
-- GET /role/:role_id — get role (includes permissions)
-- PUT /role/:role_id — update role
-- DELETE /role/:role_id — delete role
+### TeamMembers Table
+```sql
+team_id (INTEGER, PK, FK → teams.team_id)
+user_id (UUID, PK, FK → users.id)
+role_id (INTEGER, FK → roles.role_id)
+```
 
-Role permissions
-- POST /role/:role_id/permissions — attach single permission. Body: { perm_id }
-- POST /role/:role_id/permissions/bulk — attach multiple. Body: { perm_ids: [1,2] }
-- DELETE /role/:role_id/permissions/:perm_id — remove permission
+### Notifications Table
+```sql
+id (UUID, PK)
+user_id (UUID, FK → users.id)
+type (VARCHAR(50))
+data (JSONB)
+read_at (TIMESTAMP, nullable)
+delivery_meta (JSONB)
+created_at (TIMESTAMP)
+updated_at (TIMESTAMP)
+```
 
-Permissions (admin)
-- POST /permission — create permission. Body: { name }
-- GET /permission/:perm_id — get permission
-- PUT /permission/:perm_id — update permission
-- DELETE /permission/:perm_id — delete permission
+### Files Table
+```sql
+id (UUID, PK)
+userId (UUID, FK → users.id)
+originalFilename (VARCHAR)
+storagePath (VARCHAR)
+mimetype (VARCHAR)
+sizeInBytes (INTEGER)
+backupStoragePath (VARCHAR, nullable)
+status (VARCHAR)
+created_at (TIMESTAMP)
+updated_at (TIMESTAMP)
+```
 
-Profile
-- POST /profile — create profile (body validated)
-- GET /profile/me — get own profile (auth)
-- GET /profile/:id — get profile (role-check applies)
-- POST /profile/:id — update profile (role-check applies)
-- PUT /profile/:id/password — change password
-- POST /profile/:id/profile-picture — upload picture
-
-Team
-- POST /team — create team
-- GET /team — list teams
-- GET /team/:team_id — get single team (team_view check)
-- PUT /team/:team_id — update team (team_update check)
-- DELETE /team/:team_id — delete team (team_delete check)
-
-Team members
-- POST /team/:team_id/members — add member (member_add)
-- GET /team/:team_id/members — list members (team_view)
-- PUT /team/:team_id/members/:user_id/role — update member role (member_role_update)
-- DELETE /team/:team_id/members/:user_id — remove member (member_remove)
-
-Auth header reminder: protected routes require a valid JWT in `x-auth-token`. Auth middlewares also require `isVerified` user.
+### AnalysisResults Table
+```sql
+id (UUID, PK)
+fileId (UUID, FK → files.id)
+metadata (JSONB)
+summaryStatistics (JSONB)
+missingValues (JSONB)
+uniqueValues (JSONB)
+status (VARCHAR: 'PENDING', 'COMPLETED', 'FAILED')
+errorMessage (TEXT, nullable)
+created_at (TIMESTAMP)
+updated_at (TIMESTAMP)
+```
 
 ---
 
-## Example requests (Postman / curl)
+## 🔌 API Endpoints
 
-Sign in (get token)
+### Authentication Endpoints
 
-POST http://localhost:3000/api/v1/auth/signin
-Body:
+#### 1. Register User
+```
+POST /api/v1/auth/signup
+```
+**Body:**
 ```json
 {
-  "email": "admin@example.com",
-  "password": "password123"
+  "name": "John Doe",
+  "email": "john@example.com",
+  "password": "securePassword123"
+}
+```
+**Response:** User created, verification email sent
+
+---
+
+#### 2. Verify Email
+```
+GET /api/v1/auth/verify-email?token=<JWT_TOKEN>
+```
+**Response:** Email verified, notification created
+
+---
+
+#### 3. Sign In
+```
+POST /api/v1/auth/signin
+```
+**Body:**
+```json
+{
+  "email": "john@example.com",
+  "password": "securePassword123"
+}
+```
+**Response:**
+```json
+{
+  "token": "jwt_token_here",
+  "user": { "id", "name", "email", "role" }
 }
 ```
 
-2. Create a new permission (Admin token required)
+---
 
-POST http://localhost:3000/api/v1/permission
-Headers: x-auth-token: <ADMIN_TOKEN>
-Body:
-```json
-{ "name": "read:user" }
+#### 4. Forget Password
 ```
-
-3. Create a role
-
-POST http://localhost:3000/api/v1/role
-Headers: x-auth-token: <ADMIN_TOKEN>
-Body:
-```json
-{ "name": "Manager" }
+POST /api/v1/auth/forget-password
 ```
-
-Add permission to role (single)
-
-POST http://localhost:3000/api/v1/role/:role_id/permissions
-Headers: x-auth-token: <ADMIN_TOKEN>
-Body: { "perm_id": <ID> }
-
-Add permissions to role (bulk)
-
-POST http://localhost:3000/api/v1/role/:role_id/permissions/bulk
-Headers: x-auth-token: <ADMIN_TOKEN>
-Body:
+**Body:**
 ```json
-{ "perm_ids": [1, 2, 3] }
+{
+  "email": "john@example.com"
+}
+```
+**Response:** Reset email sent
+
+---
+
+#### 5. Change Password
+```
+POST /api/v1/auth/change-password
+```
+**Body:**
+```json
+{
+  "token": "reset_token",
+  "newPassword": "newPassword123"
+}
 ```
 
 ---
 
-## Troubleshooting — quick
+### User Endpoints
 
-• DB connection failure — check `.env` and Postgres availability.
-• Missing tables — run server or `npm run seed` (dev only) to create them.
-• Eager-loading error (Permission is not associated to Role) — restart server; model loader ensures associations before sync.
-• Unauthorized / token expiry — use `x-auth-token` header with a current JWT; ensure user `isVerified`.
-
----
-
-## Notes and next steps
-
-• For production: replace `sequelize.sync({ alter: true })` with Sequelize migrations and CI-driven schema deployments.
-• Add automated integration tests and a CI pipeline.
-• Use explicit permission checks (RBAC) where necessary.
+#### 1. Get All Users
+```
+GET /api/v1/users
+```
+**Response:** List of all users
 
 ---
 
-If you want, I can generate a Postman collection and a lightweight OpenAPI (Swagger) spec next.
+#### 2. Get User by ID
+```
+GET /api/v1/users/:id
+```
+**Response:** Single user object
 
 ---
 
-## 11) Contributing
-
-Contributions are welcome — please open issues or PRs. For major changes (migrations, tests, new endpoints), add tests and documentation updates to this README.
+#### 3. Update User
+```
+PUT /api/v1/users/:id
+```
+**Body:**
+```json
+{
+  "name": "Updated Name",
+  "email": "newemail@example.com"
+}
+```
 
 ---
 
-## 12) License
-
-This repository is available under the project license in the repository root (see `LICENSE`).
+#### 4. Delete User
+```
+DELETE /api/v1/users/:id
+```
 
 ---
 
-Thanks for using the project — if you'd like, I can also add a complete Postman collection file and a set of automated integration tests to help with CI runs.
+### Follow System Endpoints
+
+#### 1. Follow a User
+```
+POST /api/v1/users/:followeeId/follow
+Authorization: Bearer <JWT>
+```
+**Response:** Follow created + notification sent to followee
+
+---
+
+#### 2. Unfollow a User
+```
+DELETE /api/v1/users/:followeeId/follow
+Authorization: Bearer <JWT>
+```
+
+---
+
+#### 3. Get User's Followers
+```
+GET /api/v1/users/:userId/followers?page=1&limit=20
+Authorization: Bearer <JWT>
+```
+
+---
+
+#### 4. Get User's Following
+```
+GET /api/v1/users/:userId/following?page=1&limit=20
+Authorization: Bearer <JWT>
+```
+
+---
+
+#### 5. Check if Following
+```
+GET /api/v1/users/:followerId/is-following/:followeeId
+Authorization: Bearer <JWT>
+```
+
+---
+
+### Team Endpoints
+
+#### 1. Create Team
+```
+POST /api/v1/teams
+Authorization: Bearer <JWT>
+```
+**Body:**
+```json
+{
+  "name": "Development Team",
+  "description": "Core development team"
+}
+```
+
+---
+
+#### 2. Get All Teams
+```
+GET /api/v1/teams
+Authorization: Bearer <JWT>
+```
+
+---
+
+#### 3. Get Team by ID
+```
+GET /api/v1/teams/:team_id
+Authorization: Bearer <JWT>
+```
+
+---
+
+#### 4. Update Team
+```
+PUT /api/v1/teams/:team_id
+Authorization: Bearer <JWT>
+```
+
+---
+
+#### 5. Delete Team
+```
+DELETE /api/v1/teams/:team_id
+Authorization: Bearer <JWT>
+```
+
+---
+
+#### 6. Add Team Member
+```
+POST /api/v1/teams/:team_id/members
+Authorization: Bearer <JWT>
+```
+**Body:**
+```json
+{
+  "email": "user@example.com",
+  "roleName": "Editor"
+}
+```
+**Response:** User added + notification sent to new member
+
+---
+
+#### 7. Remove Team Member
+```
+DELETE /api/v1/teams/:team_id/members/:user_id
+Authorization: Bearer <JWT>
+```
+**Response:** User removed + notification sent
+
+---
+
+#### 8. Get Team Members
+```
+GET /api/v1/teams/:team_id/members
+Authorization: Bearer <JWT>
+```
+
+---
+
+### Notification Endpoints
+
+#### 1. Get All Notifications
+```
+GET /api/v1/notifications?page=1&limit=20
+Authorization: Bearer <JWT>
+```
+**Response:** User's notifications with pagination
+
+---
+
+#### 2. Get Unread Notifications
+```
+GET /api/v1/notifications/unread?page=1&limit=20
+Authorization: Bearer <JWT>
+```
+
+---
+
+#### 3. Get Unread Count
+```
+GET /api/v1/notifications/unread/count
+Authorization: Bearer <JWT>
+```
+**Response:**
+```json
+{
+  "unreadCount": 5
+}
+```
+
+---
+
+#### 4. Get Notifications by Type
+```
+GET /api/v1/notifications/type/:type?page=1&limit=20
+Authorization: Bearer <JWT>
+```
+**Types:** `new_follower`, `email_verified`, `added_to_team`, `removed_from_team`, `new_feature`, etc.
+
+---
+
+#### 5. Get Single Notification
+```
+GET /api/v1/notifications/:id
+Authorization: Bearer <JWT>
+```
+
+---
+
+#### 6. Mark as Read
+```
+PUT /api/v1/notifications/:id/read
+Authorization: Bearer <JWT>
+```
+
+---
+
+#### 7. Mark Multiple as Read
+```
+PUT /api/v1/notifications/read/multiple
+Authorization: Bearer <JWT>
+```
+**Body:**
+```json
+{
+  "notificationIds": ["id1", "id2", "id3"]
+}
+```
+
+---
+
+#### 8. Mark All as Read
+```
+PUT /api/v1/notifications/read/all
+Authorization: Bearer <JWT>
+```
+
+---
+
+#### 9. Delete Notification
+```
+DELETE /api/v1/notifications/:id
+Authorization: Bearer <JWT>
+```
+
+---
+
+### File Endpoints
+
+#### 1. Upload File
+```
+POST /api/v1/files/upload
+Authorization: Bearer <JWT>
+Content-Type: multipart/form-data
+```
+**Form Data:** `file` (binary)
+
+---
+
+#### 2. Get User's Files
+```
+GET /api/v1/files
+Authorization: Bearer <JWT>
+```
+
+---
+
+#### 3. Get File by ID
+```
+GET /api/v1/files/:id
+Authorization: Bearer <JWT>
+```
+
+---
+
+#### 4. Delete File
+```
+DELETE /api/v1/files/:id
+Authorization: Bearer <JWT>
+```
+
+---
+
+### Process/Analysis Endpoints
+
+#### 1. Analyze File
+```
+POST /api/v1/process/analyze/:fileId
+Authorization: Bearer <JWT>
+```
+**Response:** Analysis results with metadata, statistics, missing values
+
+---
+
+#### 2. Handle Missing Values
+```
+POST /api/v1/process/handle-missing/:fileId
+Authorization: Bearer <JWT>
+```
+**Body:**
+```json
+{
+  "column": "age",
+  "strategy": "mean|median|mode|fill|drop",
+  "fillValue": 0
+}
+```
+
+---
+
+#### 3. Normalize Column Names
+```
+POST /api/v1/process/normalize/:fileId
+Authorization: Bearer <JWT>
+```
+
+---
+
+#### 4. Rollback File
+```
+POST /api/v1/process/rollback/:fileId
+Authorization: Bearer <JWT>
+```
+
+---
+
+## 🔔 Notification System
+
+### Automatic Notification Scenarios
+
+#### 1. **New Follower Notification**
+**When:** User A follows User B
+**Type:** `new_follower`
+**Recipient:** User B
+**Data:**
+```json
+{
+  "follower_id": "uuid",
+  "follower_name": "John Doe",
+  "follower_email": "john@example.com",
+  "profile_url": "/users/uuid"
+}
+```
+**Message:** Auto-generated or custom
+
+---
+
+#### 2. **Email Verification Notification**
+**When:** User verifies their email address
+**Type:** `email_verified`
+**Recipient:** The user who verified
+**Data:**
+```json
+{
+  "email": "user@example.com",
+  "verified_at": "2026-02-23T10:00:00Z",
+  "message": "Your email has been successfully verified!"
+}
+```
+
+---
+
+#### 3. **Added to Team Notification**
+**When:** Team owner adds a user to team
+**Type:** `added_to_team`
+**Recipient:** The added user
+**Data:**
+```json
+{
+  "team_id": 1,
+  "team_name": "Development Team",
+  "team_description": "Core team",
+  "role": "Editor",
+  "message": "You have been added to the team \"Development Team\""
+}
+```
+
+---
+
+#### 4. **Removed from Team Notification**
+**When:** Team owner removes a user from team
+**Type:** `removed_from_team`
+**Recipient:** The removed user
+**Data:**
+```json
+{
+  "team_id": 1,
+  "team_name": "Development Team",
+  "message": "You have been removed from the team \"Development Team\""
+}
+```
+
+---
+
+#### 5. **System Broadcast Notifications**
+**When:** Admin broadcasts feature update, maintenance, etc.
+**Types:** `new_feature`, `feature_update`, `maintenance`, `security_update`, `bug_fix`, etc.
+**Recipients:** All verified users
+**Data Example:**
+```json
+{
+  "feature_name": "Dark Mode",
+  "feature_description": "New dark theme available",
+  "message": "🎉 New Feature: Dark Mode"
+}
+```
+
+---
+
+### Notification Object Structure
+```json
+{
+  "id": "uuid",
+  "user_id": "uuid",
+  "type": "new_follower",
+  "data": {
+    "follower_name": "John",
+    "message": "John followed you"
+  },
+  "read_at": null,
+  "delivery_meta": {
+    "email": "pending",
+    "push": "pending",
+    "in_app": "delivered"
+  },
+  "created_at": "2026-02-23T10:00:00Z",
+  "updated_at": "2026-02-23T10:00:00Z"
+}
+```
+
+---
+
+### Delivery Status Values
+- `pending` - Queued for delivery
+- `sent` - Successfully sent
+- `failed` - Failed to send
+- `skipped` - Intentionally not sent
+- `bounced` - Email bounced
+
+---
+
+## 📦 Features & Scenarios
+
+### User Registration Flow
+```
+1. User calls POST /api/v1/auth/signup
+2. System creates user (isVerified = false)
+3. System sends verification email
+4. User clicks verification link
+5. System marks email as verified → EMAIL_VERIFIED notification created
+```
+
+### Follow Flow
+```
+1. User A calls POST /api/v1/users/B_ID/follow
+2. System creates follow relationship
+3. NEW_FOLLOWER notification created for User B
+4. User B receives notification immediately
+```
+
+### Team Addition Flow
+```
+1. Team owner calls POST /api/v1/teams/ID/members
+2. System adds user to team
+3. ADDED_TO_TEAM notification created for new member
+4. New member receives notification
+5. User sees in notifications list with team details
+```
+
+### System Feature Broadcast
+```
+1. Admin broadcasts new feature (via internal service call)
+2. System calls broadcastToAllUsers('new_feature', {...})
+3. Notification created for EVERY verified user
+4. All users see notification in their list
+```
+
+---
+
+## 📁 Project Structure
+
+```
+src/
+├── api/
+│   ├── auth/
+│   │   ├── auth.controller.js
+│   │   ├── auth.service.js
+│   │   ├── auth.route.js
+│   │   └── auth.validation.js
+│   ├── user/
+│   │   ├── user.model.js
+│   │   ├── user.repository.js
+│   │   ├── user.service.js
+│   │   ├── follow.model.js        ← New
+│   │   ├── follow.repository.js   ← New
+│   │   └── user.route.js
+│   ├── notification/
+│   │   ├── notification.model.js
+│   │   ├── notification.repository.js
+│   │   ├── notification.service.js
+│   │   ├── notification.controller.js
+│   │   ├── notification.route.js
+│   │   ├── notification.validation.js
+│   │   └── NOTIFICATION_API.md
+│   ├── team/
+│   │   ├── team.model.js
+│   │   ├── team.repository.js
+│   │   ├── team.service.js
+│   │   ├── team.controller.js
+│   │   ├── team.route.js
+│   │   ├── teamMember.model.js
+│   │   └── team.validation.js
+│   ├── file/
+│   │   ├── file.model.js
+│   │   ├── file.repository.js
+│   │   ├── file.service.js
+│   │   ├── file.controller.js
+│   │   ├── file.route.js
+│   │   └── file.validation.js
+│   └── process/
+│       ├── process.model.js
+│       ├── process.repository.js
+│       ├── process.service.js
+│       ├── process.controller.js
+│       ├── process.route.js
+│       └── process.validation.js
+├── config/
+│   └── database.js
+├── middlewares/
+│   ├── auth.middleware.js
+│   ├── error.handler.js
+│   ├── validate.js
+│   ├── upload.js
+│   └── async.handler.js
+├── utils/
+│   ├── ApiResponse.js
+│   ├── bcrypt.js
+│   ├── mailer.js
+│   └── dataframe-wrapper.js
+├── app.js
+└── index.js
+```
+
+---
+
+## 💡 Usage Examples
+
+### Example 1: User Registration with Email Verification
+```javascript
+// 1. User registers
+POST /api/v1/auth/signup
+{
+  "name": "Alice",
+  "email": "alice@example.com",
+  "password": "secure123"
+}
+
+// 2. System sends verification email
+// 3. User clicks link: /api/v1/auth/verify-email?token=JWT_TOKEN
+
+// 4. User receives EMAIL_VERIFIED notification:
+{
+  "type": "email_verified",
+  "data": {
+    "email": "alice@example.com",
+    "message": "Your email has been successfully verified!"
+  }
+}
+```
+
+---
+
+### Example 2: Following User Flow
+```javascript
+// User John (id: uuid-john) follows User Alice (id: uuid-alice)
+
+POST /api/v1/users/uuid-alice/follow
+Authorization: Bearer <JWT>
+
+// Result:
+// 1. Follow relationship created
+// 2. Alice receives NEW_FOLLOWER notification:
+{
+  "type": "new_follower",
+  "data": {
+    "follower_name": "John",
+    "follower_id": "uuid-john",
+    "profile_url": "/users/uuid-john"
+  }
+}
+
+// 3. Alice checks notifications:
+GET /api/v1/notifications
+// See John's follow notification
+```
+
+---
+
+### Example 3: Team Member Addition
+```javascript
+// Team owner adds user to team
+
+POST /api/v1/teams/1/members
+Authorization: Bearer <JWT>
+{
+  "email": "bob@example.com",
+  "roleName": "Editor"
+}
+
+// Result:
+// 1. Bob added to team
+// 2. Bob receives ADDED_TO_TEAM notification:
+{
+  "type": "added_to_team",
+  "data": {
+    "team_name": "Development Team",
+    "role": "Editor",
+    "message": "You have been added to the team \"Development Team\""
+  }
+}
+
+// 3. Bob can now see notifications:
+GET /api/v1/notifications/type/added_to_team
+// See team invitation
+```
+
+---
+
+### Example 4: System Broadcast (Feature Release)
+```javascript
+// Internal call from admin dashboard or cron job:
+
+const notificationService = new NotificationService();
+
+await notificationService.broadcastToAllUsers(
+  'new_feature',
+  {
+    feature_name: 'Dark Mode',
+    feature_description: 'Toggle dark theme in settings',
+    enabled_at: new Date().toISOString()
+  },
+  { email: 'pending', push: 'pending', in_app: 'delivered' }
+);
+
+// Result:
+// Every verified user receives:
+{
+  "type": "new_feature",
+  "data": {
+    "feature_name": "Dark Mode",
+    "message": "🎉 New Feature: Dark Mode"
+  }
+}
+```
+
+---
+
+### Example 5: Check Unread Notifications
+```javascript
+// Get unread count
+GET /api/v1/notifications/unread/count
+Authorization: Bearer <JWT>
+
+Response:
+{
+  "unreadCount": 5
+}
+
+// Get unread notifications
+GET /api/v1/notifications/unread
+Authorization: Bearer <JWT>
+
+Response:
+{
+  "notifications": [
+    {
+      "id": "uuid",
+      "type": "new_follower",
+      "data": { "follower_name": "John", ... },
+      "read_at": null
+    },
+    ...
+  ],
+  "pagination": { "total": 5, "page": 1, "limit": 20, "pages": 1 }
+}
+
+// Mark all as read
+PUT /api/v1/notifications/read/all
+Authorization: Bearer <JWT>
+```
+
+---
+
+## 🔐 Security Notes
+
+1. **JWT Authentication** - All endpoints (except auth) require Bearer token
+2. **Password Hashing** - Bcrypt with 10 salt rounds
+3. **Email Verification** - Token expires in default JWT expiry
+4. **User Isolation** - Users can only access their own notifications
+5. **Role-based Access** - Only admins can perform certain actions
+6. **SQL Injection Prevention** - Using Sequelize ORM
+
+---
+
+## 🐛 Error Handling
+
+All errors follow this format:
+```json
+{
+  "statusCode": 400,
+  "message": "Error description",
+  "success": false
+}
+```
+
+Common error codes:
+- `400` - Bad request
+- `401` - Unauthorized
+- `403` - Forbidden
+- `404` - Not found
+- `409` - Conflict (duplicate email, already following, etc.)
+- `500` - Server error
+
+---
+
+## 📝 Common Workflows
+
+### Workflow 1: Complete User Journey
+```
+1. Sign up → Email sent
+2. Verify email → Email verified notification
+3. View profile
+4. Follow another user → Follower gets notification
+5. Create team
+6. Invite team members → Members get notifications
+7. Upload file
+8. Analyze file
+9. View notifications
+```
+
+### Workflow 2: Team Collaboration
+```
+1. Create team
+2. Invite users (each user gets added_to_team notification)
+3. Upload files to team
+4. Analyze data
+5. Manage roles
+6. Remove members (removed_from_team notification)
+```
+
+---
+
+## 🛠️ Maintenance
+
+### Cleanup Old Notifications
+```javascript
+// Can be called from cron job (internal, no API endpoint)
+await notificationService.cleanupOldNotifications(30); // 30 days
+```
+
+### Monitor Database
+- Check `/notifications` table size
+- Archive old notifications if needed
+- Monitor query performance
+
+---
+
+## 📞 Support
+
+For issues or questions:
+1. Check the API documentation above
+2. Review error messages
+3. Check request body format
+4. Verify JWT token is valid
+5. Check database connection
+
+---
+
+**Last Updated:** February 23, 2026
+**Version:** 1.0.0
