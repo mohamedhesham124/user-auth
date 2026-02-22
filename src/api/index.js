@@ -9,6 +9,7 @@ const roleRoutes = require('./role/role.route');
 const permissionRoutes = require('./permission/permission.route');
 const fileRoutes = require('./file/file.route');
 const processRoutes = require('./process/process.route');
+const notificationRoutes = require('./notification/notification.route');
 
 
 router.use('/auth', authRoutes);
@@ -23,5 +24,8 @@ router.use('/file', fileRoutes);
 
 // ALL process-file-related routes will be prefixed with /process
 router.use('/process', processRoutes);
+
+// ALL notification-related routes will be prefixed with /notification
+router.use('/notification', notificationRoutes);
 
 module.exports = router;

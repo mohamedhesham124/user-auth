@@ -2,6 +2,7 @@ const jwt = require('jsonwebtoken');
 const Mailer = require('../../utils/mailer');
 const bcryptUtil = require('../../utils/bcrypt');
 const UserRepository = require('../user/user.repository');
+const NotificationService = require('../notification/notification.service');
 
 // Helper function to sign JWT tokens
 const signToken = (payload, expiresIn = '1d') => {
@@ -11,6 +12,7 @@ const signToken = (payload, expiresIn = '1d') => {
 class AuthService {
     constructor() {
         this.userRepository = UserRepository;
+        this.notificationService = new NotificationService();
         this.mailer = new Mailer();
     }
 
@@ -45,6 +47,21 @@ class AuthService {
     async verifyEmail(token) {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         await this.userRepository.verifyEmail(decoded.userId);
+
+        // Create notification for successful email verification
+        const user = await this.userRepository.findById(decoded.userId);
+        if (user) {
+            await this.notificationService.createNotification(
+                decoded.userId,
+                'email_verified',
+                {
+                    email: user.email,
+                    verified_at: new Date().toISOString(),
+                    message: 'Your email has been successfully verified!'
+                },
+                { email: 'skipped', push: 'pending', in_app: 'delivered' }
+            );
+        }
     }
 
     /**

@@ -1,12 +1,14 @@
 const TeamRepository = require('./team.repository');
 const UserRepository = require('../user/user.repository');
 const RoleRepository = require('../role/role.repository');
+const NotificationService = require('../notification/notification.service');
 
 class TeamService {
   constructor() {
     this.teamRepository = TeamRepository;
     this.userRepository = UserRepository;
     this.roleRepository = RoleRepository;
+    this.notificationService = new NotificationService();
   }
 
   async createTeam(teamData, created_by, roleName) {
@@ -85,15 +87,50 @@ class TeamService {
       role = await this.roleRepository.create({ name: roleToUse });
     }
 
-    return await this.teamRepository.addMember(team_id, user_id, role.role_id);
+    const result = await this.teamRepository.addMember(team_id, user_id, role.role_id);
+
+    // Create notification for new team member
+    await this.notificationService.createNotification(
+      user_id,
+      'added_to_team',
+      {
+        team_id,
+        team_name: team.name,
+        team_description: team.description,
+        role: roleToUse,
+        message: `You have been added to the team "${team.name}"`
+      },
+      { email: 'pending', push: 'pending', in_app: 'delivered' }
+    );
+
+    return result;
   }
 
   async removeMemberFromTeam(team_id, user_id) {
+    const team = await this.teamRepository.findById(team_id);
+
+    if (!team) {
+      throw { statusCode: 404, message: "Team not found" };
+    }
+
     const removed = await this.teamRepository.removeMember(team_id, user_id);
 
     if (!removed) {
       throw { statusCode: 404, message: "Member not found in team" };
     }
+
+    // Create notification for removed team member
+    await this.notificationService.createNotification(
+      user_id,
+      'removed_from_team',
+      {
+        team_id,
+        team_name: team.name,
+        message: `You have been removed from the team "${team.name}"`
+      },
+      { email: 'pending', push: 'pending', in_app: 'delivered' }
+    );
+
     return { message: "Member removed from team successfully" };
   }
 
